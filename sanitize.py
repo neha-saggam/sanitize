@@ -81,7 +81,7 @@ def main():
                     continue
 
                 with open(f, "r") as fl:
-                    lines = fl.readlines()
+                    lines = fl.read().splitlines()
 
                 if not lines:
                     print("File %s is empty!" % (rel_path))
@@ -89,28 +89,31 @@ def main():
 
                 # Remove trailing blank lines
                 fix_trail = False
-                print(lines[-1])
-                while lines[-1] == "\n":
+                while not lines[-1]:
                     fix_trail = True
                     lines.pop()
 
-                # Write back the files
-                with open(f, "w") as fout:
+                # Detect console log
+                if f.lower().endswith((".js", ".jsx")):
                     for line_no, line in enumerate(lines):
-                        if f.lower().endswith((".js", ".jsx")) and line.find("console.log") != -1:
+                        if line.find("console.log") != -1:
                             print("Loggers found at %d in %s" %(line_no + 1, f))
+
+                with open(f, "w") as fout: 
+                    for line_no, line in enumerate(lines):
                         # Remove trailing whitespace
-                        line.rstrip("\n")
-                        fout.write(line)
+                        # line.rstrip()
+                        fout.write(line+"\n")
                     if fix_trail:
                         print("Trailing empty lines removed from %s" %
                               (rel_path))
 
-                # Run clang-format
-                # if f.lower().endswith((".hpp", ".h", ".cpp", ".cc", ".proto")):
-                #     subprocess.Popen(
-                #         "clang-format -i %s" % (rel_path), shell=True, stdout=subprocess.PIPE
-                #     )
+                # Run prettier
+                if f.lower().endswith((".js", ".jsx", ".css")):
+                    prettier_command = "prettier --write " + rel_path
+                    print(prettier_command)
+                    process = subprocess.Popen(prettier_command, shell=True, stdout=subprocess.PIPE)
+                    process.communicate()
 
 
 main()
